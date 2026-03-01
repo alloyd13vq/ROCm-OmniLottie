@@ -19,10 +19,10 @@
 
 ## 🔥🔥🔥 News !!
 - [2026/03/02] 👋 Upload paper and init project. [Read](https://arxiv.org/abs/2504.06263)
-- [2026/03/02] 🧑‍💻 We have released the inference code and model weight. 🤗[Weight](https://huggingface.co/OmniLottie/OmniLottie).
-- [2026/03/02] 📊 We have released **MMLottieBench** for evaluating vector animation generation! Check out [MMLottieBench](https://huggingface.co/datasets/OmniLottie/MMLottieBench).
-- [2026/03/02] 💾 Release MMLottie-2M Dataset 🤗[MMLottie-2M Dataset](https://huggingface.co/datasets/OmniLottie/MMLottie-2M).
-- [2026/03/02] 👋 We have released the Huggingface Demo. 🤗[Demo](https://huggingface.co/spaces/OmniLottie/OmniLottie).
+- [2026/03/02] 🧑‍💻 Release the inference code and model weights. 🤗[Weight](https://huggingface.co/OmniLottie/OmniLottie).
+- [2026/03/02] 📊 Release 🤗[MMLottieBench](https://huggingface.co/datasets/OmniLottie/MMLottieBench) for benchmarking vector animation generation capabilities.
+- [2026/03/02] 💾 Release 🤗[MMLottie-2M Dataset](https://huggingface.co/datasets/OmniLottie/MMLottie-2M).
+- [2026/03/02] 👋 Launch the Huggingface 🤗[Demo](https://huggingface.co/spaces/OmniLottie/OmniLottie), try it out!
 - [2026/02/21] OmniLottie is accepted to **CVPR 2026**🔥! See you in Denver!
 
 
