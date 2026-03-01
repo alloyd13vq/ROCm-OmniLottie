@@ -14,7 +14,7 @@
 <a href="https://huggingface.co/datasets/OmniLottie/MMLottie-2M"><img src="https://img.shields.io/badge/%F0%9F%A4%97%20Dataset%20-HF-orange"></a> &nbsp;&nbsp;&nbsp;&nbsp;
 <a href="https://huggingface.co/datasets/OmniLottie/MMLottieBench"><img src="https://img.shields.io/badge/%F0%9F%A4%97%20Bench-HF-orange"></a> &nbsp;&nbsp;&nbsp;&nbsp;
 <a href="https://huggingface.co/spaces/OmniLottie/OmniLottie"><img src="https://img.shields.io/badge/%F0%9F%A4%97%20Demo%20-HF-orange"></a> &nbsp;&nbsp;&nbsp;&nbsp;
-<a href='https://github.com/OpenVGLab/OmniLottie'><img src='https://img.shields.io/badge/Training-Code-blue?logo=github'></a>
+<!-- <a href='https://github.com/OpenVGLab/OmniLottie'><img src='https://img.shields.io/badge/Training-Code-blue?logo=github'></a> -->
 </div>
 
 ## 🔥🔥🔥 News !!
