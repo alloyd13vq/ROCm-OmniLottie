@@ -111,9 +111,6 @@ huggingface-cli download OmniLottie/OmniLottie --local-dir /PATH/TO/OmniLottie
 **Try with Example Data**
 
 We provide example prompts, images, and videos in the `example/` directory:
-- `example/demo.txt` - 37 text prompts
-- `example/demo_images/` - 26 images (with corresponding text descriptions)
-- `example/demo_video/` - 30 videos
 
 ```bash
 # Test with example text prompts
