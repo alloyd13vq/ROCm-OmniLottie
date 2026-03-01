@@ -369,14 +369,9 @@ OmniLottie is licensed under the [**Apache License 2.0**](https://www.apache.org
 ## Acknowledgments
 We thank the following excellent open-source works:
 
-[IconShop](https://icon-shop.github.io/): is the first advanced work that leverages LLMs to generate monochrome, icon-level SVGs. We referred to its parametric implementation.
-
-Here is the list of highly related concurrent works:
-
-[LLM4SVG](https://arxiv.org/abs/2412.11102): treats SVG coordinates as number strings and predicts decimal part for higher spatial accuracy.
-
-[StarVector](https://starvector.github.io/): equips LLM with an image encoder for Image-to-SVG generation.
-
+- **Data Sources**: LottieFiles, IconScout, Flaticon, Iconfont, Icons8
+- **SVG Base**: MMSVG-2M dataset
+  
 ## Star History
 
 [![Star History Chart](https://api.star-history.com/svg?repos=OpenVGLab/OmniLottie&type=Date)](https://www.star-history.com/#OpenVGLab/OmniLottie&Date)
