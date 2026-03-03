@@ -18,7 +18,7 @@
 </div>
 
 ## 🔥🔥🔥 News !!
-- [2026/03/03] 👋 Upload paper and init project. [Read](https://arxiv.org/abs/2504.06263)
+- [2026/03/03] 👋 Upload paper and init project. [Read](https://arxiv.org/abs/2603.02138)
 - [2026/03/03] 🧑‍💻 Release the inference code and model weights. 🤗[Weight](https://huggingface.co/OmniLottie/OmniLottie).
 - [2026/03/03] 📊 Release 🤗[MMLottieBench](https://huggingface.co/datasets/OmniLottie/MMLottieBench) for benchmarking vector animation generation capabilities.
 - [2026/03/03] 💾 Release 🤗[MMLottie-2M Dataset](https://huggingface.co/datasets/OmniLottie/MMLottie-2M).
@@ -355,11 +355,11 @@ OmniLottie is licensed under the [**Apache License 2.0**](https://www.apache.org
 ## Citation
 
 ```bibtex
-@article{yang2025omnilottie,
+@article{yang2026omnilottie,
   title={OmniLottie: Generating Vector Animations via Parameterized Lottie Tokens},
-  author={Yiying Yang and Wei Cheng and Sijin Chen and Xianfang Zeng and Jiaxu Zhang and Liao Wang and Gang Yu and Xinjun Ma and Yu-Gang Jiang},
-  journal={arXiv preprint arxiv:2504.06263},
-  year={2025}
+  author={Yiying Yang and Wei Cheng and Sijin Chen and Honghao Fu and Xianfang Zeng and Yujun Cai and Gang Yu and Xinjun Ma},
+  journal={arXiv preprint arxiv:2603.02138},
+  year={2026}
 }
 ```
 
