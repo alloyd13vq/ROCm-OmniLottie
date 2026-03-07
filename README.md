@@ -18,6 +18,7 @@
 </div>
 
 ## 🔥🔥🔥 News !!
+- [2026/03/06] 🔥 [ComfyUI](https://github.com/smthemex/ComfyUI_OmniLottie) (community contribution) is now supported!  
 - [2026/03/03] 👋 Upload paper and init project. [Read](https://arxiv.org/abs/2603.02138)
 - [2026/03/03] 🧑‍💻 Release the inference code and model weights. 🤗[Weight](https://huggingface.co/OmniLottie/OmniLottie).
 - [2026/03/03] 📊 Release 🤗[MMLottieBench](https://huggingface.co/datasets/OmniLottie/MMLottieBench) for benchmarking vector animation generation capabilities.
