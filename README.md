@@ -41,7 +41,7 @@
 - [ ] Training Code
 
 ## 🧩 Community Contributions
-- 👋 OmniLottie ComfyUI Plugin by [@smthemex](https://github.com/smthemex) [ComfyUI_OmniLottie]([https://github.com/smthemex/ComfyUI_OmniSVG](https://github.com/smthemex/ComfyUI_OmniLottie)).
+- 👋 OmniLottie ComfyUI Plugin [ComfyUI_OmniLottie](https://github.com/smthemex/ComfyUI_OmniLottie) by [@smthemex](https://github.com/smthemex).
 
 ## 1. Introduction
 
