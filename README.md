@@ -40,7 +40,8 @@
 - [x] MMLottieBench Benchmark
 - [ ] Training Code
 
-
+## 🧩 Community Contributions
+- 👋 OmniLottie ComfyUI Plugin by [@smthemex](https://github.com/smthemex) [ComfyUI_OmniLottie]([https://github.com/smthemex/ComfyUI_OmniSVG](https://github.com/smthemex/ComfyUI_OmniLottie)).
 
 ## 1. Introduction
 
