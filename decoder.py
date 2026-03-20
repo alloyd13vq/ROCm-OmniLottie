@@ -4,6 +4,8 @@ from transformers import Qwen2_5_VLForConditionalGeneration, AutoConfig
 from transformers.models.qwen2_5_vl.modeling_qwen2_5_vl import Qwen2_5_VLCausalLMOutputWithPast
 from typing import Any, Dict, List, Optional, Tuple, Union
 
+from runtime import parse_torch_dtype
+
 
 import transformers.models.qwen2_5_vl.modeling_qwen2_5_vl as qwen_modeling
 
@@ -17,7 +19,10 @@ class LottieDecoder(nn.Module):
     def __init__(self,
                  pix_len,
                  text_len,
-                 model_path="Qwen/Qwen2.5-VL-3B-Instruct", 
+                 model_path="Qwen/Qwen2.5-VL-3B-Instruct",
+                 torch_dtype="auto",
+                 attn_implementation="eager",
+                 load_pretrained_backbone=True,
                  **kwargs):
         super().__init__()
         
@@ -30,7 +35,7 @@ class LottieDecoder(nn.Module):
         self.pad_token_id = 151643
         
         print(f"Loading model from {model_path}...")
-        
+        resolved_dtype = parse_torch_dtype(torch_dtype)
         config = AutoConfig.from_pretrained(
             model_path,
             vocab_size=self.vocab_size,
@@ -40,13 +45,19 @@ class LottieDecoder(nn.Module):
             trust_remote_code=True
         )
 
-        self.transformer = Qwen2_5_VLForConditionalGeneration.from_pretrained(
-            model_path,
-            config=config,
-            torch_dtype=torch.bfloat16,
-            attn_implementation="eager",  
-            ignore_mismatched_sizes=True
-        )
+        if load_pretrained_backbone:
+            self.transformer = Qwen2_5_VLForConditionalGeneration.from_pretrained(
+                model_path,
+                config=config,
+                torch_dtype=resolved_dtype,
+                attn_implementation=attn_implementation,
+                ignore_mismatched_sizes=True
+            )
+        else:
+            config._attn_implementation = attn_implementation
+            self.transformer = Qwen2_5_VLForConditionalGeneration(config)
+            if resolved_dtype is not None:
+                self.transformer = self.transformer.to(dtype=resolved_dtype)
 
         self.transformer.resize_token_embeddings(self.vocab_size)
         

@@ -23,6 +23,7 @@ from decoder import LottieDecoder
 from transformers import AutoTokenizer, AutoProcessor
 from qwen_vl_utils import process_vision_info
 from decord import VideoReader, cpu
+from runtime import clear_device_cache, dtype_to_name, get_runtime, runtime_summary
 
 from lottie.objects.lottie_tokenize import LottieTensor
 from lottie.objects.lottie_param import (
@@ -35,8 +36,9 @@ from lottie.objects.lottie_param import (
 from PIL import Image as PILImage
 
 os.environ["TOKENIZERS_PARALLELISM"] = "false"
-torch.backends.cudnn.benchmark = False
-torch.backends.cudnn.deterministic = True
+if hasattr(torch.backends, "cudnn"):
+    torch.backends.cudnn.benchmark = False
+    torch.backends.cudnn.deterministic = True
 
 # ========== Constants ==========
 TASK_VIDEO = "video"
@@ -811,8 +813,9 @@ def run_batch_text_file_inference(args, cfg):
     """
     Generate Lottie from text file.
     """
-    device = torch.device("cuda:0" if torch.cuda.is_available() else "xpu:0" if torch.xpu.is_available() else "cpu")
-    print(f"Using device: {device}")
+    runtime = get_runtime(args.device, args.dtype)
+    device = runtime.device
+    print(f"Using runtime: {runtime_summary(runtime)}")
 
     if not os.path.exists(args.batch_text_file):
         raise FileNotFoundError(f"Batch text file not found: {args.batch_text_file}")
@@ -821,7 +824,12 @@ def run_batch_text_file_inference(args, cfg):
     processor = AutoProcessor.from_pretrained(cfg['tokenizer_name'], padding_side="left")
     processor.tokenizer.padding_side = "left"
 
-    model = LottieDecoder(pix_len=cfg['pix_len'], text_len=cfg['text_len'])
+    model = LottieDecoder(
+        pix_len=cfg['pix_len'],
+        text_len=cfg['text_len'],
+        torch_dtype=runtime.torch_dtype,
+        load_pretrained_backbone=False,
+    )
 
 
     if os.path.isfile(args.sketch_weight) and args.sketch_weight.endswith('.bin'):
@@ -918,8 +926,9 @@ def run_mmlottie_bench_inference(args, cfg):
         - Task types: Text-to-Lottie, Text-Image-to-Lottie, Video-to-Lottie
         - Fields: id, text, image, video, task_type, subset, etc.
     """
-    device = torch.device("cuda:0" if torch.cuda.is_available() else "xpu:0" if torch.xpu.is_available() else "cpu")
-    print(f"Using device: {device}")
+    runtime = get_runtime(args.device, args.dtype)
+    device = runtime.device
+    print(f"Using runtime: {runtime_summary(runtime)}")
 
     # 1. Load dataset
     print("\nLoading MMLottieBench dataset...")
@@ -959,7 +968,12 @@ def run_mmlottie_bench_inference(args, cfg):
     processor = AutoProcessor.from_pretrained(cfg['tokenizer_name'], padding_side="left")
     processor.tokenizer.padding_side = "left"
 
-    model = LottieDecoder(pix_len=cfg['pix_len'], text_len=cfg['text_len'])
+    model = LottieDecoder(
+        pix_len=cfg['pix_len'],
+        text_len=cfg['text_len'],
+        torch_dtype=runtime.torch_dtype,
+        load_pretrained_backbone=False,
+    )
 
     if os.path.isfile(args.sketch_weight) and args.sketch_weight.endswith('.bin'):
         model_path = args.sketch_weight
@@ -1163,10 +1177,7 @@ def run_mmlottie_bench_inference(args, cfg):
                 stats[task_type]['fail'] += 1
 
             # Clear cache
-            if torch.cuda.is_available():
-                torch.cuda.empty_cache()
-            if torch.xpu.is_available():
-                torch.xpu.empty_cache()
+            clear_device_cache(device)
 
         except Exception as e:
             print(f"  ❌ Error: {e}")
@@ -1188,13 +1199,20 @@ def run_mmlottie_bench_inference(args, cfg):
 
 
 def run_single_inference(args, cfg):
-    device = torch.device("cuda:0" if torch.cuda.is_available() else "xpu:0" if torch.xpu.is_available() else "cpu")
+    runtime = get_runtime(args.device, args.dtype)
+    device = runtime.device
+    print(f"Using runtime: {runtime_summary(runtime)}")
     
     print("Loading model...")
     processor = AutoProcessor.from_pretrained(cfg['tokenizer_name'], padding_side="left")
     processor.tokenizer.padding_side = "left"
     
-    model = LottieDecoder(pix_len=cfg['pix_len'], text_len=cfg['text_len'])
+    model = LottieDecoder(
+        pix_len=cfg['pix_len'],
+        text_len=cfg['text_len'],
+        torch_dtype=runtime.torch_dtype,
+        load_pretrained_backbone=False,
+    )
     
     model_path = os.path.join(args.sketch_weight, 'pytorch_model.bin')
     safetensors_path = os.path.join(args.sketch_weight, 'model.safetensors')
@@ -1229,7 +1247,7 @@ def run_single_inference(args, cfg):
             model=model, processor=processor, task_type=task, device=device, cfg=cfg,
             uid=None,
             image_path=args.single_image,
-            text_description=args.single_text or "Animate this image",
+            text_description=args.text or args.single_text or "Animate this image",
             use_sampling=args.use_sampling,
             temperature=args.temperature,
             top_p=args.top_p,
@@ -1237,13 +1255,13 @@ def run_single_inference(args, cfg):
             repetition_penalty=args.repetition_penalty,
             output_path=out_path,
             verbose=True)
-    elif args.single_text:
+    elif args.single_text or args.text:
         task = TASK_TEXT
         out_path = os.path.join(args.output_dir, 'single_text_result.json')
         lottie_json, info = run_inference(
             model=model, processor=processor, task_type=task, device=device, cfg=cfg,
             uid=None,
-            text_description=args.single_text,
+            text_description=args.text or args.single_text,
             use_sampling=args.use_sampling,
             temperature=args.temperature,
             top_p=args.top_p,
@@ -1304,6 +1322,8 @@ if __name__ == "__main__":
                         help="Path to single image for inference")
     parser.add_argument("--single_text", type=str, default=None,
                         help="Text prompt for single inference")
+    parser.add_argument("--text", type=str, default=None,
+                        help="Prompt text alias for image/text single-sample inference")
     
     # MMLottie Benchmark模式
     parser.add_argument("--mmlottie_bench_dir", type=str, default="./mmlottie_bench",
@@ -1322,6 +1342,10 @@ if __name__ == "__main__":
                         help="Enable debug mode with full tracebacks")
     parser.add_argument("--verbose", action="store_true", default=True,
                         help="Verbose output")
+    parser.add_argument("--device", type=str, default="auto",
+                        help="Execution device: auto, cuda, cuda:0, xpu, or cpu")
+    parser.add_argument("--dtype", type=str, default="auto",
+                        help="Torch dtype: auto, float16, bfloat16, or float32")
 
     parser.add_argument("--num_candidates", type=int, default=1,
                         help="Number of candidates to generate (for Best-of-N selection, default: 1)")
@@ -1341,6 +1365,9 @@ if __name__ == "__main__":
     print(f"Model: {args.sketch_weight}")
     print(f"Max tokens: {args.maxlen}")
     print(f"Sampling: {args.use_sampling}")
+    runtime = get_runtime(args.device, args.dtype)
+    print(f"Runtime: {runtime_summary(runtime)}")
+    print(f"Resolved dtype: {dtype_to_name(runtime.torch_dtype)}")
     if args.use_sampling:
         print(f"  Temperature: {args.temperature}")
         print(f"  Top-p: {args.top_p}")

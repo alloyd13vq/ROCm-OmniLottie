@@ -8,6 +8,7 @@ import os
 import transformers.models.qwen2_5_vl.modeling_qwen2_5_vl as qwen_modeling
 
 from configuration_lottie_decoder import LottieDecoderConfig
+from runtime import parse_torch_dtype
 
 
 class LottieDecoder(PreTrainedModel):
@@ -39,11 +40,20 @@ class LottieDecoder(PreTrainedModel):
         self.eos_token_id = config.eos_token_id
         self.pad_token_id = config.pad_token_id
 
-        print(f"Initializing LottieDecoder with base model: {config.base_model_path}")
+        base_model_path = config.base_model_path
+        if os.path.isabs(base_model_path) and not os.path.exists(base_model_path):
+            print(
+                f"Base model path {base_model_path} not found, "
+                "falling back to Qwen/Qwen2.5-VL-3B-Instruct"
+            )
+            base_model_path = "Qwen/Qwen2.5-VL-3B-Instruct"
+            self.config.base_model_path = base_model_path
+
+        print(f"Initializing LottieDecoder with base model: {base_model_path}")
 
         # Create base model configuration
         qwen_config = AutoConfig.from_pretrained(
-            config.base_model_path,
+            base_model_path,
             vocab_size=self.vocab_size,
             bos_token_id=self.bos_token_id,
             eos_token_id=self.eos_token_id,
@@ -52,13 +62,21 @@ class LottieDecoder(PreTrainedModel):
         )
 
         # Load base Qwen2.5-VL model
-        self.transformer = Qwen2_5_VLForConditionalGeneration.from_pretrained(
-            config.base_model_path,
-            config=qwen_config,
-            torch_dtype=getattr(torch, config.torch_dtype) if isinstance(config.torch_dtype, str) else config.torch_dtype,
-            attn_implementation=config.attn_implementation,
-            ignore_mismatched_sizes=True
-        )
+        resolved_dtype = parse_torch_dtype(config.torch_dtype)
+
+        if config.load_pretrained_backbone:
+            self.transformer = Qwen2_5_VLForConditionalGeneration.from_pretrained(
+                base_model_path,
+                config=qwen_config,
+                torch_dtype=resolved_dtype,
+                attn_implementation=config.attn_implementation,
+                ignore_mismatched_sizes=True
+            )
+        else:
+            qwen_config._attn_implementation = config.attn_implementation
+            self.transformer = Qwen2_5_VLForConditionalGeneration(qwen_config)
+            if resolved_dtype is not None:
+                self.transformer = self.transformer.to(dtype=resolved_dtype)
 
         # Extend vocabulary to support Lottie tokens
         self.transformer.resize_token_embeddings(self.vocab_size)
@@ -84,7 +102,9 @@ class LottieDecoder(PreTrainedModel):
                 print(f"Detected old format model, loading from {old_format_path}...")
                 return cls._from_old_format(pretrained_model_name_or_path, **kwargs)
 
-        # Use standard Hugging Face loading process
+        kwargs.setdefault("load_pretrained_backbone", False)
+        kwargs.setdefault("base_model_path", "Qwen/Qwen2.5-VL-3B-Instruct")
+
         return super().from_pretrained(pretrained_model_name_or_path, *model_args, **kwargs)
 
     @classmethod
@@ -99,12 +119,17 @@ class LottieDecoder(PreTrainedModel):
         pix_len = kwargs.pop('pix_len', 4560)
         text_len = kwargs.pop('text_len', 1500)
         base_model_path = kwargs.pop('base_model_path', 'Qwen/Qwen2.5-VL-3B-Instruct')
+        torch_dtype = kwargs.pop('torch_dtype', 'auto')
+        attn_implementation = kwargs.pop('attn_implementation', 'eager')
 
         # Create configuration
         config = LottieDecoderConfig(
             pix_len=pix_len,
             text_len=text_len,
-            base_model_path=base_model_path
+            base_model_path=base_model_path,
+            torch_dtype=torch_dtype,
+            attn_implementation=attn_implementation,
+            load_pretrained_backbone=False,
         )
 
         # Initialize model

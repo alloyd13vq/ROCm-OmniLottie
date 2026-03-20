@@ -36,6 +36,7 @@ from decord import VideoReader, cpu
 from decoder_hf import LottieDecoder  # Use HF decoder with from_pretrained
 from transformers import AutoProcessor
 from qwen_vl_utils import process_vision_info
+from runtime import clear_device_cache, get_runtime, runtime_summary
 from lottie.objects.lottie_tokenize import LottieTensor
 from lottie.objects.lottie_param import (
     from_sequence, ShapeLayer, NullLayer, PreCompLayer, TextLayer,
@@ -70,14 +71,20 @@ def load_model_once():
     # Examples: "OmniLottie/OmniLottie" or "/path/to/local/model"
     model_path = os.environ.get("MODEL_PATH", "OmniLottie/OmniLottie")
 
-    device = torch.device("cuda:0" if torch.cuda.is_available() else "xpu:0" if torch.xpu.is_available() else "cpu")
+    runtime = get_runtime(
+        os.environ.get("OMNILOTTIE_DEVICE", "auto"),
+        os.environ.get("OMNILOTTIE_DTYPE", "auto"),
+    )
+    device = runtime.device
 
     print(f"Loading model from {model_path}...")
+    print(f"Using runtime: {runtime_summary(runtime)}")
 
     # Load model using from_pretrained (supports HF Hub and local paths)
     model = LottieDecoder.from_pretrained(
         model_path,
-        torch_dtype=torch.bfloat16,
+        torch_dtype=runtime.torch_dtype,
+        base_model_path=os.environ.get("PROCESSOR_PATH", "Qwen/Qwen2.5-VL-3B-Instruct"),
         trust_remote_code=True
     )
 
@@ -627,10 +634,7 @@ def process_text_to_lottie(text_prompt, max_tokens, use_sampling, temperature, t
             )
 
             del inputs
-            if torch.cuda.is_available():
-                torch.cuda.empty_cache()
-            if torch.xpu.is_available():
-                torch.xpu.empty_cache()
+            clear_device_cache(device)
 
             lottie_json = tokens_to_lottie_json(generated_ids)
 
@@ -645,10 +649,7 @@ def process_text_to_lottie(text_prompt, max_tokens, use_sampling, temperature, t
             return html, status, temp_path
 
         except Exception as e:
-            if torch.cuda.is_available():
-                torch.cuda.empty_cache()
-            if torch.xpu.is_available():
-                torch.xpu.empty_cache()
+            clear_device_cache(device)
             return None, f"❌ Error: {str(e)}", None
 
 def load_image_from_file(file_path):
@@ -695,10 +696,7 @@ def process_image_to_lottie(image_file, text_description, max_tokens, use_sampli
             )
 
             del inputs
-            if torch.cuda.is_available():
-                torch.cuda.empty_cache()
-            if torch.xpu.is_available():
-                torch.xpu.empty_cache()
+            clear_device_cache(device)
 
             lottie_json = tokens_to_lottie_json(generated_ids)
 
@@ -713,10 +711,7 @@ def process_image_to_lottie(image_file, text_description, max_tokens, use_sampli
             return html, status, temp_path
 
         except Exception as e:
-            if torch.cuda.is_available():
-                torch.cuda.empty_cache()
-            if torch.xpu.is_available():
-                torch.xpu.empty_cache()
+            clear_device_cache(device)
             return None, f"❌ Error: {str(e)}", None
 
 def process_video_to_lottie(video, max_tokens, use_sampling, temperature, top_p, top_k):
@@ -745,10 +740,7 @@ def process_video_to_lottie(video, max_tokens, use_sampling, temperature, top_p,
             )
 
             del inputs
-            if torch.cuda.is_available():
-                torch.cuda.empty_cache()
-            if torch.xpu.is_available():
-                torch.xpu.empty_cache()
+            clear_device_cache(device)
 
             lottie_json = tokens_to_lottie_json(generated_ids)
 
@@ -763,10 +755,7 @@ def process_video_to_lottie(video, max_tokens, use_sampling, temperature, top_p,
             return html, status, temp_path
 
         except Exception as e:
-            if torch.cuda.is_available():
-                torch.cuda.empty_cache()
-            if torch.xpu.is_available():
-                torch.xpu.empty_cache()
+            clear_device_cache(device)
             return None, f"❌ Error: {str(e)}", None
 
 def create_gradio_interface():

@@ -20,8 +20,10 @@ class LottieDecoderConfig(PretrainedConfig):
         bos_token_id (int): Beginning-of-sequence token ID for Lottie
         eos_token_id (int): End-of-sequence token ID for Lottie
         pad_token_id (int): Padding token ID
-        torch_dtype (str): Model weight data type, default "bfloat16"
+        torch_dtype (str): Model weight data type, default "auto"
         attn_implementation (str): Attention implementation method, default "eager"
+        load_pretrained_backbone (bool): Whether to hydrate the base Qwen model from
+            its upstream checkpoint before loading OmniLottie weights.
     """
 
     model_type = "lottie_decoder"
@@ -35,8 +37,9 @@ class LottieDecoderConfig(PretrainedConfig):
         bos_token_id: int = 192398,
         eos_token_id: int = 192399,
         pad_token_id: int = 151643,
-        torch_dtype: str = "bfloat16",
+        torch_dtype: str = "auto",
         attn_implementation: str = "eager",
+        load_pretrained_backbone: bool = True,
         **kwargs
     ):
         super().__init__(
@@ -52,3 +55,4 @@ class LottieDecoderConfig(PretrainedConfig):
         self.vocab_size = vocab_size
         self.torch_dtype = torch_dtype
         self.attn_implementation = attn_implementation
+        self.load_pretrained_backbone = load_pretrained_backbone

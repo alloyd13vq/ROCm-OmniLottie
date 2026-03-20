@@ -88,6 +88,50 @@ Install remaining dependencies:
 pip install -r requirements.txt
 ```
 
+#### ROCm / HIP Setup (Linux)
+For AMD GPUs on Linux, use the included ROCm setup script instead of the CUDA wheel command above:
+
+```bash
+cd OmniLottie
+./setup_rocm_venv.sh
+source .venv/bin/activate
+```
+
+The ROCm setup script:
+- Creates a local `.venv`
+- Installs PyTorch ROCm wheels aligned to the ROCm 7.x wheel line
+- Installs the repo requirements
+- Prints a small torch/ROCm verification summary
+- Exports `AMDGPU_ASIC_ID_TABLE_PATHS=/usr/share/libdrm` when available so
+  PyTorch's bundled `libdrm_amdgpu` uses the system `amdgpu.ids` table on
+  Arch/Manjaro-style setups
+
+Runtime controls for ROCm and other accelerators:
+
+```bash
+# Auto-select device and choose a safe dtype automatically
+python inference_hf.py --device auto --dtype auto ...
+
+# Force fp16 if your AMD GPU does not handle bf16 well
+python inference_hf.py --device auto --dtype float16 ...
+
+# Gradio apps also honor these environment variables
+OMNILOTTIE_DEVICE=auto OMNILOTTIE_DTYPE=float16 MODEL_PATH=/path/to/model python app_hf.py
+```
+
+For a local ROCm app launch:
+
+```bash
+./launch_local_hf_rocm.sh
+```
+
+That launcher script:
+- Activates `.venv`
+- Uses the local model directory you point `MODEL_PATH` at
+- Forces the stable ROCm compatibility settings for RX 6750 XT style setups
+- Sets `AMDGPU_ASIC_ID_TABLE_PATHS=/usr/share/libdrm` to suppress the
+  `/opt/amdgpu/share/libdrm/amdgpu.ids` warning
+
 
 ## 4. Inference
 
@@ -494,4 +538,3 @@ We thank the following projects and resources for their valuable contributions:
 ## Star History
 
 [![Star History Chart](https://api.star-history.com/svg?repos=OpenVGLab/OmniLottie&type=Date)](https://www.star-history.com/#OpenVGLab/OmniLottie&Date)
-

@@ -20,6 +20,7 @@ import torch
 import argparse
 import json
 import re
+import random
 from pathlib import Path
 from PIL import Image
 import numpy as np
@@ -29,6 +30,7 @@ from decord import VideoReader, cpu
 from decoder_hf import LottieDecoder
 from transformers import AutoProcessor
 from qwen_vl_utils import process_vision_info
+from runtime import get_runtime, runtime_summary
 
 # Import Lottie conversion tools
 from lottie.objects.lottie_tokenize import LottieTensor
@@ -64,6 +66,23 @@ def simplify_to_animation_description(text):
         text = text[0].upper() + text[1:]
 
     return text.strip()
+
+
+def add_random_background(img):
+    if img.mode != 'RGBA':
+        return img.convert('RGB')
+
+    light_colors = [(255, 255, 255), (245, 245, 245), (250, 250, 250)]
+    background = Image.new('RGB', img.size, random.choice(light_colors))
+    background.paste(img, (0, 0), img)
+    return background
+
+
+def load_image_from_path(image_path):
+    image = Image.open(image_path)
+    if image.mode == 'RGBA':
+        return add_random_background(image)
+    return image.convert('RGB')
 
 
 def load_frames_from_video(video_path, num_frames=8, max_size=336):
@@ -351,8 +370,10 @@ def main():
                       help='Top-k sampling')
 
     # Device arguments
-    parser.add_argument('--device', type=str, default='cuda',
-                      help='Device (cuda/cpu)')
+    parser.add_argument('--device', type=str, default='auto',
+                      help='Execution device: auto, cuda, cuda:0, xpu, or cpu')
+    parser.add_argument('--dtype', type=str, default='auto',
+                      help='Torch dtype: auto, float16, bfloat16, or float32')
 
     args = parser.parse_args()
 
@@ -361,7 +382,9 @@ def main():
         parser.error("Must provide --text, --image, or --video")
 
     # Set device
-    device = torch.device(args.device if torch.cuda.is_available() else "cpu")
+    runtime = get_runtime(args.device, args.dtype)
+    device = runtime.device
+    print(f"Runtime: {runtime_summary(runtime)}")
 
     # Load model
     print("="*60)
@@ -371,7 +394,8 @@ def main():
     print(f"\n1. Loading model from: {args.model_path}")
     model = LottieDecoder.from_pretrained(
         args.model_path,
-        torch_dtype=torch.bfloat16,
+        torch_dtype=runtime.torch_dtype,
+        base_model_path=args.processor_path,
         trust_remote_code=True
     )
     model = model.to(device).eval()
@@ -390,17 +414,11 @@ def main():
     print("Preparing inputs...")
     print("="*60)
 
-    if args.text:
-        print(f"\nMode: Text-to-Lottie")
-        print(f"Prompt: {args.text}")
-        messages = build_messages("text", text_prompt=args.text)
-
-    elif args.image:
+    if args.image:
         print(f"\nMode: Image-to-Lottie")
         print(f"Image: {args.image}")
-        image = Image.open(args.image)
-        if image.mode != 'RGB':
-            image = image.convert('RGB')
+        print(f"Prompt: {args.text or 'A simple animation'}")
+        image = load_image_from_path(args.image)
         image = image.resize((448, 448), Image.LANCZOS)
         messages = build_messages("image", text_prompt=args.text, image=image)
 
@@ -409,6 +427,11 @@ def main():
         print(f"Video: {args.video}")
         frames = load_frames_from_video(args.video, num_frames=8)
         messages = build_messages("video", video_frames=frames)
+
+    elif args.text:
+        print(f"\nMode: Text-to-Lottie")
+        print(f"Prompt: {args.text}")
+        messages = build_messages("text", text_prompt=args.text)
 
     # Prepare inference input
     inputs = prepare_inference_input(processor, messages, device)
